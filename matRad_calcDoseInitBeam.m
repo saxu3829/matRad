@@ -60,4 +60,41 @@ end
 
 % limit rotated coordinates to positions where ray tracing is availabe
 rot_coordsVdoseGrid = rot_coordsVdoseGrid(~isnan(radDepthVdoseGrid{1}),:);
+
+%% lungmodulation implementation
+% calculate raytracing for all voxels inside lung
+if isfield(pln, 'lungModulation') && pln.lungModulation.CalcHetero
+    matRad_cfg.dispInfo('matRad: calculate depth cube for lungMod...');
+    modulationDepthVctGrid = matRad_rayTracing(stf(i),modulation,VctGrid,rot_coordsV,pln.propDoseCalc.effectiveLateralCutOff);
+%     lungDepthVctGrid = matRad_rayTracing(stf(i),modulation,VlungGrid,rot_coordsV,effectiveLateralCutoff);
+    matRad_cfg.dispInfo('done.\n');
+    % interpolate modulation depth cube to dose grid resolution
+    
+    modulationDepthVdoseGrid = matRad_interpRadDepth...
+    (modulation,VctGrid,VdoseGrid,dij.doseGrid.x,dij.doseGrid.y,dij.doseGrid.z,modulationDepthVctGrid);
+%         lungDepthVdoseGrid(currentScen) = matRad_interpRadDepth...
+%             (modulation,currentScen,VctGrid,VdoseGrid,dij.doseGrid.x,dij.doseGrid.y,dij.doseGrid.z,modulationDepthVctGrid);
+     
+    if ~isfield(pln.lungModulation, 'ModPower')
+        pln.lungModulation.ModPower = 250;
+        matRad_cfg.dispInfo('matRad: no modulation power specified using default value of Pmod = 250\mum ...');
+    end
+%   prepare basedata for the convolution => 
+%   precomputation of prolonged basedata needed for
+%   convolution in calcParticleDoseBixel
+%   currently all energies are prolonged => consider prolonging only used
+%   energies
+% min_energyIx = min(round2(stf(i).ray.energy,4)) == round2([machine.data.energy],4);
+% min_energyIx = find(min(round2(stf.ray.energy,4)) == round2([machine.data.energy],4));
+min_energyIx = 1;
+% max_energyIx = max(round2(stf(i).ray(j).energy,4)) == round2([machine.data.energy],4);
+% max_energyIx  = find(max(round2(stf.ray.energy,4)) == round2([machine.data.energy],4));
+max_energyIx = size(machine.data,2);
+
+for energiestep = min_energyIx:max_energyIx
+    [machine.data(energiestep).Z_adapted, machine.data(energiestep).depths_adapted] = matRad_extendBaseData(...
+        machine.data(energiestep));
+end
+
+end
  

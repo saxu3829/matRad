@@ -32,6 +32,8 @@ classdef MatRad_Config < handle
         propMC;
         propStf;
         propHeterogeneity;
+        % Lungmodulation modification:
+        propLungModulation;
 
         defaults;
 
@@ -210,7 +212,11 @@ classdef MatRad_Config < handle
             obj.propHeterogeneity.sampling.defaultNumOfSamples = 50;
             obj.propHeterogeneity.sampling.defaultContinuous = true;
 
-
+            % default properties for lungmodulation
+            obj.propLungModulation.defaultCalcHetero = true;
+            obj.propLungModulation.defaultModulateBioDose = false;
+            obj.propLungModulation.defaultModPower = 800;
+            
             % default properties for fine sampling calculation
             obj.propDoseCalc.fineSampling.defaultSigmaSub = 1;
             obj.propDoseCalc.fineSampling.defaultN = 21;

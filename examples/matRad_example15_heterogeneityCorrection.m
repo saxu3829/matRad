@@ -28,7 +28,7 @@
 matRad_rc
 
 %% Patient Data Import
-load('BOXPHANTOM_LUNG_LARGE');
+load("BOXPHANTOM_LUNG_LARGE")
 
 %% Treatment Plan
 % The next step is to define your treatment plan labeled as 'pln'. This 
@@ -44,7 +44,8 @@ load('BOXPHANTOM_LUNG_LARGE');
 % 'carbon_GenericAPM.mat'; consequently the machine has to be set accordingly
 
 pln.radiationMode   = 'protons';     % either photons / protons / carbon
-pln.machine         = 'generic_TOPAS_cropped_APM';
+pln.machine         = 'generic_APM';
+
 
 %%
 % Define the biological optimization model for treatment planning along
@@ -82,6 +83,8 @@ pln.bioParam = matRad_BioModel(pln.radiationMode,quantityOpt,modelName);
 % retrieve scenarios for dose calculation and optimziation
 pln.multScen = matRad_multScen(ct,'nomScen'); % optimize on the nominal scenario                                            
 
+%%lungmodulation implementation
+pln.lungModulation.CalcHetero = false;
 %% Istance Heterogeneity correction class
 % To enable heterogeneity correction, the parameter calcHetero must be set
 % to true. The type of correction ('complete', 'depthBased' or 'voxelwise')
@@ -90,8 +93,7 @@ pln.multScen = matRad_multScen(ct,'nomScen'); % optimize on the nominal scenario
 % calculation of RBE using fitted alpha and sqrtBeta curves implemented in
 % the APM base data files. 
 
-pln.propHeterogeneity = matRad_HeterogeneityConfig.instance();
-
+pln.propHeterogeneity = matRad_HeterogeneityConfig();
 %% Generate Beam Geometry STF
 % stf = matRad_generateStf(ct,cst,pln);
 stf = matRad_generateStfPencilBeam(pln,ct);
@@ -100,6 +102,7 @@ stf = matRad_generateStfPencilBeam(pln,ct);
 dij = matRad_calcParticleDose(ct,stf,pln,cst);
 
 %% Inverse Optimization  for IMPT based on RBE-weighted dose
+cst_withLungFlag = pln.propHeterogeneity.cstHeteroAutoassign(cst);
 resultGUI_homogeneous = matRad_fluenceOptimization(dij,cst,pln);
 
 %% Assign heterogeneity flags for lung tissue

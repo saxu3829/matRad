@@ -1,4 +1,4 @@
-function bixel = matRad_calcParticleDoseBixel(radDepths, radialDist_sq, sigmaIni_sq, baseData, heteroCorrDepths, propHeterogeneity , vTissueIndex)
+function bixel = matRad_calcParticleDoseBixel(radDepths, radialDist_sq, sigmaIni_sq, baseData, heteroCorrDepths, propHeterogeneity , lungModulation, vTissueIndex)
 % matRad visualization of two-dimensional dose distributions
 % on ct including segmentation
 %
@@ -38,7 +38,11 @@ if nargin < 5
     heteroCorrDepths = [];
     % Load heterogeneity config for Gauss functions that are called even if heterogeneity correction is turned off
     propHeterogeneity = matRad_HeterogeneityConfig();
+    %%lungmodulation integration
+    lungModulation = matRad_lungModulationConfig();
+    lungModulation.CalcHetero=false;
 end
+
 
 % Check if correct base data is loaded for heterogeneity correction
 if ~isempty(heteroCorrDepths) && ~isstruct(baseData.Z)
@@ -269,3 +273,116 @@ end
 if any(isnan(bixel.physDose)) || any(bixel.physDose<0)
     error('Error in particle dose calculation.');
 end
+
+%% lungmodulation implementation
+if ~isfield(lungModulation,'CalcHetero') && lungModulation.CalcHetero && ~isfield(baseData,'sigma')
+
+    %% lungmodulation implementation
+    Zmod = zeros(length(radDepths),1);
+    % no lung penetrated => calculation as in matRad original
+    Zmod((currmodulationDepth ==0)) = matRad_interp1(baseData.depths, baseData.Z, radDepths((currmodulationDepth ==0)));
+    for innerloop = 1:length(radDepths)
+        % no modulation depth => skip 
+        if currmodulationDepth(innerloop) == 0
+            continue
+        end
+        % Berechnung der modulierten Basisdaten
+        Zmod(innerloop) = matRad_convBaseData_voxelvise(baseData,...
+            radDepths(innerloop), currmodulationDepth(innerloop), Pmod);
+    end
+    % interpolate depth dose, sigmas, and weights    
+    % X = matRad_interp1(depths,[conversionFactor*Zmod baseData.sigma1 baseData.weight baseData.sigma2],radDepths);
+    % 
+    % % set dose for query > tabulated depth dose values to zero
+    % X(radDepths > max(depths),1) = 0;
+    % 
+    % % compute lateral sigmas
+    % sigmaSq_Narr = X(:,2).^2 + sigmaIni_sq;
+    % sigmaSq_Bro  = X(:,4).^2 + sigmaIni_sq;
+    % 
+    % % calculate lateral profile
+    % L_Narr =  exp( -radialDist_sq ./ (2*sigmaSq_Narr))./(2*pi*sigmaSq_Narr);
+    % L_Bro  =  exp( -radialDist_sq ./ (2*sigmaSq_Bro ))./(2*pi*sigmaSq_Bro );
+    % L = baseData.LatCutOff.CompFac * ((1-X(:,3)).*L_Narr + X(:,3).*L_Bro);
+    %
+    %     dose = X(:,1).*L;
+    
+    X = matRad_interp1(depths,[baseData.sigma1 baseData.weight baseData.sigma2],radDepths);
+
+    % set dose for query > tabulated depth dose values to zero
+    X(radDepths > max(depths),1) = 0;
+
+    % compute lateral sigmas
+    sigmaSq_Narr = X(:,1).^2 + sigmaIni_sq;
+    sigmaSq_Bro  = X(:,3).^2 + sigmaIni_sq;
+
+    % calculate lateral profile
+    L_Narr =  exp( -radialDist_sq ./ (2*sigmaSq_Narr))./(2*pi*sigmaSq_Narr);
+    L_Bro  =  exp( -radialDist_sq ./ (2*sigmaSq_Bro ))./(2*pi*sigmaSq_Bro );
+    L = baseData.LatCutOff.CompFac * ((1-X(:,2)).*L_Narr + X(:,2).*L_Bro);
+
+    dose = conversionFactor .* Zmod .*L;
+    
+elseif ~isfield(baseData,'sigma') && ~isfield(lungModulation,'CalcHetero') || ~lungModulation.CalcHetero 
+    
+    % interpolate depth dose, sigmas, and weights    
+    X = matRad_interp1(depths,[conversionFactor*baseData.Z baseData.sigma1 baseData.weight baseData.sigma2],radDepths);
+       
+    % set dose for query > tabulated depth dose values to zero
+    X(radDepths > max(depths),1) = 0;
+        
+    % compute lateral sigmas
+    sigmaSq_Narr = X(:,2).^2 + sigmaIni_sq;
+    sigmaSq_Bro  = X(:,4).^2 + sigmaIni_sq;
+    
+    % calculate lateral profile
+    L_Narr =  exp( -radialDist_sq ./ (2*sigmaSq_Narr))./(2*pi*sigmaSq_Narr);
+    L_Bro  =  exp( -radialDist_sq ./ (2*sigmaSq_Bro ))./(2*pi*sigmaSq_Bro );
+    L = baseData.LatCutOff.CompFac * ((1-X(:,3)).*L_Narr + X(:,3).*L_Bro);
+
+    dose = X(:,1).*L;
+elseif ~isfield(lungModulation,'CalcHetero') && lungModulation.CalcHetero && isfield(baseData,'sigma')
+     %% lungmodulation implementation
+    Zmod = zeros(length(radDepths),1);
+    % no lung penetrated => calculation as in matRad original
+    Zmod((currmodulationDepth ==0)) = matRad_interp1(baseData.depths, baseData.Z, radDepths((currmodulationDepth ==0)));
+    parfor innerloop = 1:length(radDepths)
+        % no modulation depth => skip 
+        if currmodulationDepth(innerloop) == 0
+            continue
+        end
+        % Berechnung der modulierten Basisdaten
+        Zmod(innerloop) = matRad_convBaseData_voxelvise(baseData,...
+            radDepths(innerloop), currmodulationDepth(innerloop), Pmod);
+    end
+    % interpolate depth dose and sigma
+    X = matRad_interp1(depths,baseData.sigma,radDepths);
+    
+    % set dose for query > tabulated depth dose values to zero
+    X(radDepths > max(depths),1) = 0;   
+
+    %compute lateral sigma
+    sigmaSq = X.^2 + sigmaIni_sq;
+    
+    % calculate dose
+    % dose = baseData.LatCutOff.CompFac * exp( -radialDist_sq ./ (2*sigmaSq)) .* X(:,1) ./(2*pi*sigmaSq);
+    % dose = conversionFactor .* Zmod .*L;
+    dose = conversionFactor.*baseData.LatCutOff.CompFac * exp( -radialDist_sq ./ (2*sigmaSq)) .* Zmod ./(2*pi*sigmaSq);
+else
+    
+    % interpolate depth dose and sigma
+    X = matRad_interp1(depths,[conversionFactor*baseData.Z baseData.sigma],radDepths);
+
+    %compute lateral sigma
+    sigmaSq = X(:,2).^2 + sigmaIni_sq;
+    
+    % calculate dose
+    dose = baseData.LatCutOff.CompFac * exp( -radialDist_sq ./ (2*sigmaSq)) .* X(:,1) ./(2*pi*sigmaSq);
+
+ end
+ 
+% check if we have valid dose values
+if any(isnan(dose)) || any(dose<0)
+   error('Error in particle dose calculation.');
+end 
+
