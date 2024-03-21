@@ -291,7 +291,7 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
 
                 % calculate initial sigma for all bixel on current ray
                 sigmaIniRay = matRad_calcSigmaIni(machine.data,stf(i).ray(j),stf(i).ray(j).SSD);
-                
+
                 if strcmp(pln.propDoseCalc.fineSampling.calcMode, 'fineSampling')
                     % Ray tracing for beam i and ray j with explicit
                     % lateral distances for fine sampling
@@ -300,7 +300,8 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                         stf(i).ray(j).targetPoint_bev, ...
                         machine.meta.SAD, ...
                         find(~isnan(radDepthVdoseGrid{1})), ...
-                        maxLateralCutoffDoseCalc); 
+                        maxLateralCutoffDoseCalc);
+
                     % Given the initial sigmas of the sampling ray, this
                     % function provides the weights for the sub-pencil beams,
                     % their positions and their sigma used for dose calculation
@@ -324,13 +325,8 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                         stf(i).ray(j).targetPoint_bev, ...
                         machine.meta.SAD, ...
                         find(~isnan(radDepthVdoseGrid{1})), ...
-                        maxLateralCutoffDoseCalc);  
+                        maxLateralCutoffDoseCalc);
                 end
-                %% lungmodulation implementation Witt
-                if isfield(pln, 'lungModulation') && pln.lungModulation.CalcHetero
-                   modulationDepth = modulationDepthVdoseGrid{shiftScen}(ix);
-                end  
-
 
                 if isfield(pln,'propHeterogeneity') && pln.propHeterogeneity.calcHetero
                     heteroCorrDepths = heteroCorrDepthV{shiftScen}(ix);
@@ -488,11 +484,7 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                                 if isfield(pln,'propHeterogeneity') && pln.propHeterogeneity.calcHetero
                                     currHeteroCorrDepths = heteroCorrDepths(currIx);
                                 end
-                                
-                                %% lungmodulation implementation Witt
-                                if isfield(pln, 'lungModulation') && pln.lungModulation.CalcHetero
-                                    currmodulationDepth = modulationDepth(currIx); 
-                                end
+
                                 % select correct initial focus sigma squared
                                 sigmaIni_sq = sigmaIniRay(k)^2;
 
@@ -553,20 +545,7 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                                             machine.data(energyIx), ...
                                             currHeteroCorrDepths, ...
                                             pln.propHeterogeneity, ...
-                                            pln.lungModulation,...
                                             vTissueIndex_j(currIx));
-                                     %% lungmodulation implementation
-                                    elseif isfield(pln, 'lungModulation') && pln.lungModulation.CalcHetero
-                                        bixelDose = matRad_calcParticleDoseBixel(...
-                                        currRadDepths(currIx), ...
-                                        currRadialDist_sq(currIx), ...
-                                        sigmaIni_sq, ...
-                                        machine.data(energyIx),...
-                                        pln.propHeterogeneity,...
-                                        pln.lungModulation,...
-                                        currmodulationDepth);
-                                        % change, that currmodulationDepth is the 
-                                        % modulation map 
                                     else
                                         bixelDose = matRad_calcParticleDoseBixel(...
                                             currRadDepths(currIx), ...
@@ -574,7 +553,7 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                                             sigmaIni_sq, ...
                                             machine.data(energyIx));
                                     end
-                                
+
                                     % dij sampling is exluded for particles until we investigated the influence of voxel sampling for particles
                                     %relDoseThreshold   =  0.02;   % sample dose values beyond the relative dose
                                     %Type               = 'dose';
@@ -654,11 +633,6 @@ if isfield(pln,'propHeterogeneity') && pln.propHeterogeneity.calcHetero
     dij.heterogeneityCorrection = true;
 end
 
-%% lungmodulation implementation
-% Set flag for completed lungmodulation
-if isfield(pln, 'lungModulation') && pln.lungModulation.CalcHetero
-    dij.lungmodulationWitt = true;
-end
 % Close Waitbar
 if exist('figureWait') && ishandle(figureWait)
     delete(figureWait);
