@@ -104,7 +104,7 @@ resultGUI.physicalDose_CTrand_800 = dose_sum_div;
 ct = tempstore_ct;
 clearvars tempstore_ct
 
-matRadGUI
+%matRadGUI
 
 
 matRad_compareDose(resultGUI.physicalDose_CTrand_800,resultGUI_lungmod.physicalDose,ct,cst,[1 1 0]);

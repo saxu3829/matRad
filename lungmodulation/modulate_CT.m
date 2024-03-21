@@ -22,7 +22,7 @@ interp_poission_pMod(interp_poission_pMod == 0) = 0.000001;
 num_repetitions = 100;
 % applying an addition filter for the HU values we are going to modulate
 HU_schwelle = [-900 -100];
-modulation.cube{1}(modulation.cubeHU{1}<HU_schwelle(1) | modulation.cubeHU{1}>HU_schwelle(2)) = 0;
+%modulation.cube{1}(modulation.cubeHU{1}<HU_schwelle(1) | modulation.cubeHU{1}>HU_schwelle(2)) = 0;
 
 % checking for HU values outside the range of [-1000,2995] for the density
 % calculation

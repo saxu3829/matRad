@@ -200,7 +200,7 @@ if isfield(pln,'propHeterogeneity') && pln.propHeterogeneity.calcHetero
     end
     % apply HU threshold 
     HU_schwelle = [-900 -100];
-    modulation.cube{2}(modulation.cubeHU{1}<HU_schwelle(1) | modulation.cubeHU{1}>HU_schwelle(2)) = 0;
+    %modulation.cube{2}(modulation.cubeHU{1}<HU_schwelle(1) | modulation.cubeHU{1}>HU_schwelle(2)) = 0;
     modulation.cube{1}(modulation.cube{2}>0) = 1;
     assignin('base', 'modulation', modulation)
 
