@@ -26,10 +26,14 @@ pln.propOpt.runSequencing   = false;  % 1/true: run sequencing, 0/false: don't /
 modelName           = 'none';
 quantityOpt         = 'physicalDose';   
 
-
+% Set doseGrid resolution to ct resolution for CT Randomization model of
+% Kilian
 pln.propDoseCalc.doseGrid.resolution.x = ct.resolution.x; % [mm]
 pln.propDoseCalc.doseGrid.resolution.y = ct.resolution.y; % [mm]
 pln.propDoseCalc.doseGrid.resolution.z = ct.resolution.z; % [mm]
+
+% Set CT to water:
+ct.cubeHU{1,1}=zeros(ct.cubeDim)
 
 % retrieve bio model parameters
 pln.bioParam = matRad_BioModel(pln.radiationMode,quantityOpt,modelName);
@@ -48,8 +52,10 @@ pln.multScen = matRad_multScen(ct,'nomScen'); % optimize on the nominal scenario
 pln.propHeterogeneity = matRad_HeterogeneityConfig();
 
 %% generate steering file
-stf = matRad_generateStf(ct,cst,pln);
+%stf = matRad_generateStf(ct,cst,pln);
 
+% single pencil beam generation:
+stf = matRad_generateStfPencilBeam(pln, ct);
 %% calc dose
 dij = matRad_calcParticleDose(ct,stf,pln,cst);
 resultGUI = matRad_fluenceOptimization(dij,cst,pln);
@@ -88,7 +94,7 @@ dose_sum = zeros(size(resultGUI.physicalDose));
 for i = 1:size(modulation.modCube,1)
     disp(i)
     ct.cube{1} = modulation.modCube{i};
-    resultGUI_recalc = matRad_calcDoseDirect(ct,stf,pln,cst,resultGUI.w);
+    resultGUI_recalc = matRad_calcDoseDirect(ct,stf,pln,cst_withLungFlag,resultGUI.w);
     dose_sum = dose_sum + resultGUI_recalc.physicalDose;
 end
 
