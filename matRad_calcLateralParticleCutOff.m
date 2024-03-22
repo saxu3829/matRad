@@ -73,10 +73,14 @@ rangeShifterLUT = rangeShifterLUT(1,ixUnique);
 
 % find the largest inital beam width considering focus index, SSD and range shifter for each individual energy
 for i = 1:size(energySigmaLUT,1)
-
     % find index of maximum used energy (round to keV for numerical reasons
-    energyIx = max(round2(energySigmaLUT(i,1),4)) == round2([machine.data.energy],4);
-
+    % in case of single pencil beams another round is needed to get a reasonable outcome
+    if stf.singlePencil
+        energyIx = max(round2(energySigmaLUT(i,1),4)) == round(round2([machine.data.energy],4));
+    % default for more rays and beams
+    else 
+        energyIx = max(round2(energySigmaLUT(i,1),4)) == round2([machine.data.energy],4);
+    end
     currFoci = energySigmaLUT(i,2);
     sigmaIni = matRad_interp1(machine.data(energyIx).initFocus.dist(currFoci,:)',...
         machine.data(energyIx).initFocus.sigma(currFoci,:)',...
@@ -109,7 +113,13 @@ for i = 1:numel(uniqueEnergies)
 end
 
 % get energy indices for looping
-vEnergiesIx = find(ismember([machine.data(:).energy],uniqueEnergies(:,1)));
+% in case of single pencil beams another round is needed to get a reasonable outcome
+if stf.singlePencil
+    vEnergiesIx = find(ismember(round([machine.data(:).energy]),uniqueEnergies(:,1)));
+else
+    vEnergiesIx = find(ismember([machine.data(:).energy],uniqueEnergies(:,1)));
+end
+
 cnt         = 0;
 
 % loop over all entries in the machine.data struct

@@ -54,8 +54,11 @@ pln.propHeterogeneity = matRad_HeterogeneityConfig();
 %% generate steering file
 %stf = matRad_generateStf(ct,cst,pln);
 
+% pencil beam generation:
+%stf = matRad_generateStfPencilBeam(pln, ct);
+
 % single pencil beam generation:
-stf = matRad_generateStfPencilBeam(pln, ct);
+stf = matRad_generateStfSinglePencilBeam(ct, cst, pln);
 %% calc dose
 dij = matRad_calcParticleDose(ct,stf,pln,cst);
 resultGUI = matRad_fluenceOptimization(dij,cst,pln);

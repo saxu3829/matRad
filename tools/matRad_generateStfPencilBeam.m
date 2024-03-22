@@ -110,4 +110,6 @@ for i = 1:length(pln.propStf.gantryAngles)
     stf(i).totalNumOfBixels = stf(i).numOfRays;
 end
 
+% add label to recognize single pencil beam
+stf.singlePencil = 0;
 end

@@ -285,12 +285,18 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
             if ~isempty(stf(i).ray(j).energy)
 
                 % find index of maximum used energy (round to keV for numerical reasons
-                energyIx = max(round2(stf(i).ray(j).energy,4)) == round2([machine.data.energy],4);
-
+                % in case of single pencil beams another round is needed to get a reasonable outcome
+                if stf.singlePencil
+                    energyIx = max(round2(stf(i).ray(j).energy,4)) == round(round2([machine.data.energy],4));
+                % default for more rays and beams
+                else 
+                    energyIx = max(round2(stf(i).ray(j).energy,4)) == round2([machine.data.energy],4);
+                end
+    
                 maxLateralCutoffDoseCalc = max(machine.data(energyIx).LatCutOff.CutOff);
 
                 % calculate initial sigma for all bixel on current ray
-                sigmaIniRay = matRad_calcSigmaIni(machine.data,stf(i).ray(j),stf(i).ray(j).SSD);
+                sigmaIniRay = matRad_calcSigmaIni(machine.data,stf(i).ray(j),stf(i).ray(j).SSD, stf);
 
                 if strcmp(pln.propDoseCalc.fineSampling.calcMode, 'fineSampling')
                     % Ray tracing for beam i and ray j with explicit
@@ -380,7 +386,14 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                     end
 
                     % find energy index in base data
-                    energyIx = find(round2(stf(i).ray(j).energy(k),4) == round2([machine.data.energy],4));
+                    % in case of single pencil beams another round is needed to get a reasonable outcome
+                    if stf.singlePencil
+                        energyIx = find(round2(stf(i).ray(j).energy(k),4) == round(round2([machine.data.energy],4)));
+                    % default for more rays and beams
+                    else 
+                        energyIx = find(round2(stf(i).ray(j).energy(k),4) == round2([machine.data.energy],4));
+                    end
+                    
 
                     % Since matRad's ray cast starts at the skin and base data
                     % is generated at soume source to phantom distance

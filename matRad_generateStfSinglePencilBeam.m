@@ -92,4 +92,6 @@ stf.ray.focusIx = 1;
 % save total number of bixels
 stf.totalNumOfBixels = 1;
 
+% add label to recognize single pencil beam
+stf.singlePencil = 1;
 end

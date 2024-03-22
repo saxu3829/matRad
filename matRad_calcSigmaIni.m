@@ -1,4 +1,4 @@
-function [sigmaIni] = matRad_calcSigmaIni(baseData,rays,SSD)
+function [sigmaIni] = matRad_calcSigmaIni(baseData,rays,SSD, stf)
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % This function evaluates simultaneously the initial sigma of the beam for
 % one or more energies
@@ -36,7 +36,13 @@ tempFocus = [rays.focusIx];
 focusIxVec = tempFocus(uniqueEnergyIdx);
 
 % finds energy index for all the energies
-[~,energyIxVec] = intersect([baseData.energy],energyVec);
+% in case of single pencil beams another round is needed to get a reasonable outcome
+if stf.singlePencil
+    [~,energyIxVec] = intersect(round([baseData.energy]),energyVec);
+else
+    [~,energyIxVec] = intersect([baseData.energy],energyVec);
+end
+
 
 if length(energyVec)==1
     sigmaIni = matRad_interp1(baseData(energyIxVec).initFocus.dist(rays.focusIx,:)',baseData(energyIxVec).initFocus.sigma(rays.focusIx,:)',SSD);
