@@ -475,7 +475,7 @@ for i = 1:length(pln.propStf.gantryAngles)
         minPeakPos  = machine.data(minEnergy == availableEnergies).peakPos;
         maxPeakPos  = machine.data(maxEnergy == availableEnergies).peakPos;
         
-        % find set of energyies with adequate spacing
+        % find set of energies with adequate spacing
         
         
         stf(i).longitudinalSpotSpacing = longitudinalSpotSpacing;

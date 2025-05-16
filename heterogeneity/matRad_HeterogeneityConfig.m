@@ -27,8 +27,8 @@ classdef matRad_HeterogeneityConfig < handle
         useOriginalDepths = false;
         bioOpt = false;
 
-        modulateLET = true;
-        modulateBioDose = true;
+        modulateLET = false;
+        modulateBioDose = false;
 
         % "medium" modulation power
         % Pmod = 256; % [µm]
@@ -36,9 +36,9 @@ classdef matRad_HeterogeneityConfig < handle
         modPower = 800;
 
         useDoseCurves = true;
-
-        type = 'complete';  % 'complete','depthBased','voxelwise'
-        
+        %% Stolzenberg modification:
+        type = 'local_pmod';  % 'local_pmod', 'complete','depthBased','voxelwise'
+        %%
         % Property struct for sampling
         sampling = struct('mode','matRad', ...
             'method','binomial',...  % 'binomial','poisson'

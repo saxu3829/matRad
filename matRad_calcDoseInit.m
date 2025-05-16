@@ -171,7 +171,7 @@ end
 % compute SSDs -> Removed for now because it is scenario-dependent
 % stf = matRad_computeSSD(stf,ct);
 
-%% lundmodulation implementation
+%% lungmodulation implementation
 %  create a variable analogue to "ct" for "lung" to hand to raytracer
 if isfield(pln,'propHeterogeneity') && pln.propHeterogeneity.calcHetero
     % modulation cube with properties of ct      
@@ -220,5 +220,5 @@ if isfield(pln,'propHeterogeneity') && pln.propHeterogeneity.calcHetero
 % %  additional filter for HU range
 %     modulation.cube{1}(modulation.cubeHU{1}<-900 & modulation.cubeHU{1}>-100) = 0)
 
-    figure,imshow(modulation.cube{2}(:,:,round(modulation.cubeDim(3)/2)))
+    % figure,imshow(modulation.cube{2}(:,:,round(modulation.cubeDim(3)/2)))
 end

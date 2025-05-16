@@ -22,14 +22,14 @@
 matRad_rc; %If this throws an error, run it from the parent directory first to set the paths
 
 %% Create a CT image series
-xDim = 200;
-yDim = 200;
-zDim = 50;
+xDim = 300;
+yDim = 300;
+zDim = 150;
 
 ct.cubeDim      = [yDim xDim zDim]; % second cube dimension represents the x-coordinate
-ct.resolution.x = 2;
-ct.resolution.y = 2;
-ct.resolution.z = 3;
+ct.resolution.x = 1.5;
+ct.resolution.y = 1.5;
+ct.resolution.z = 1.5;
 ct.numOfCtScen  = 1;
  
 % create an ct image series with zeros - it will be filled later
@@ -72,7 +72,7 @@ cst{ixPTV,5}.visibleColor = [1 1 1];
 cst{ixPTV,6}{1} = struct(DoseObjectives.matRad_SquaredDeviation(800,60));
 
 %% Lets create either a cubic or a spheric phantom
-TYPE = 'spheric';   % either 'cubic' or 'spheric'
+TYPE = 'cubic';   % either 'cubic' or 'spheric'
 
 % first the OAR
 cubeHelper = zeros(ct.cubeDim);

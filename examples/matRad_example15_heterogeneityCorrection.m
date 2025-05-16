@@ -28,7 +28,8 @@
 matRad_rc
 
 %% Patient Data Import
-load('BOXPHANTOM_LUNG_LARGE');
+% load('PHANTOM_control_350_Lung_wide.mat');
+load '\\david.lse.thm.de\Jessica\MATLAB\phantoms\Patient_0_Flatten.mat'
 
 %% Treatment Plan
 % The next step is to define your treatment plan labeled as 'pln'. This 
@@ -44,7 +45,7 @@ load('BOXPHANTOM_LUNG_LARGE');
 % 'carbon_GenericAPM.mat'; consequently the machine has to be set accordingly
 
 pln.radiationMode   = 'protons';     % either photons / protons / carbon
-pln.machine         = 'generic_TOPAS_cropped_APM';
+pln.machine         = 'Generic_APM';
 
 %%
 % Define the biological optimization model for treatment planning along
@@ -89,12 +90,12 @@ pln.multScen = matRad_multScen(ct,'nomScen'); % optimize on the nominal scenario
 % specified. Independently, the parameter useDoseCurves enables the
 % calculation of RBE using fitted alpha and sqrtBeta curves implemented in
 % the APM base data files. 
-
+ct.cube_pmod = 250;
 pln.propHeterogeneity = matRad_HeterogeneityConfig();
 
 %% Generate Beam Geometry STF
-% stf = matRad_generateStf(ct,cst,pln);
-stf = matRad_generateStfPencilBeam(pln,ct);
+stf = matRad_generateStf(ct,cst,pln);
+% stf = matRad_generateStfPencilBeam(pln,ct);
 
 %%
 dij = matRad_calcParticleDose(ct,stf,pln,cst);

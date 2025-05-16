@@ -1,4 +1,4 @@
-function bixel = matRad_calcParticleDoseBixel(radDepths, radialDist_sq, sigmaIni_sq, baseData, heteroCorrDepths, propHeterogeneity , vTissueIndex)
+function bixel = matRad_calcParticleDoseBixel(radDepths, radialDist_sq, sigmaIni_sq, baseData, heteroCorrDepths, propHeterogeneity , vTissueIndex, pmod)
 % matRad visualization of two-dimensional dose distributions
 % on ct including segmentation
 %
@@ -134,8 +134,16 @@ if isstruct(baseData.Z)
                 end
 
             case 'voxelwise'
-                ellSq = bsxfun(@plus, baseData.Z.width'.^2, propHeterogeneity.getHeterogeneityCorrSigmaSq(heteroCorrDepths));
-
+                ellSq = bsxfun(@plus, baseData.Z.width'.^2, propHeterogeneity.getHeterogeneityCorrSigmaSq(heteroCorrDepths, propHeterogeneity.modPower));
+            %% Stolzenberg implementation:
+            % local pmod for each bixel, mean of all pmod values for each
+            % voxel in the bixel (see matRad_calcParticleDose.m)
+            case 'local_pmod'
+                if any(pmod~=0)
+                    disp([heteroCorrDepths pmod])
+                end
+                ellSq = bsxfun(@plus, baseData.Z.width'.^2, propHeterogeneity.getHeterogeneityCorrSigmaSq(heteroCorrDepths, pmod));
+            %%
             otherwise
                 matRad_cfg.dispError('Error in heterogeneity correction')
         end

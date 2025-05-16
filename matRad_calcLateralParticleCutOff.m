@@ -344,6 +344,8 @@ if visBool
         ylim = get(gca,'Ylim');    set(gca,'Ylim',[0 ylim(2)+3]),    legend(cellLegend)
     end
 
+% add label to recognize single pencil beam
+stf.singlePencil = 0;
 
 
 

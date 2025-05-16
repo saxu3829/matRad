@@ -49,7 +49,9 @@ pln = matRad_cfg.getDefaultProperties(pln,{'propDoseCalc'});
 if isfield(pln,'propHeterogeneity') && pln.propHeterogeneity.calcHetero
     pln.propHeterogeneity = matRad_HeterogeneityConfig();
     pln.propHeterogeneity.bioOpt = pln.bioParam.bioOpt;
-    matRad_cfg.dispInfo(['Modulation power set to Pmod = ' num2str(pln.propHeterogeneity.modPower) ' µm.\n']);
+    %% Stolzenberg modification:
+    pln.propHeterogeneity.modPower = ct.cube_pmod;
+    % matRad_cfg.dispInfo(['Modulation power set to Pmod = ' num2str(pln.propHeterogeneity.modPower) ' µm.\n']);
     cstOriginal = cst;
 end
 
@@ -197,7 +199,7 @@ if pln.bioParam.bioOpt
 
             for i = 1:size(cst,1)
 
-                % check if cst is compatiable
+                % check if cst is compatible
                 if ~isempty(cst{i,5}) && isfield(cst{i,5},'alphaX') && isfield(cst{i,5},'betaX')
 
                     % check if base data contains alphaX and betaX
@@ -465,7 +467,7 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                                 else
                                     matRad_cfg.dispError('Lateral Cut-Off must be a value between 0 and 1!')
                                 end
-
+                                %%
                                 % empty bixels may happen during recalculation of error
                                 % scenarios -> skip to next bixel
                                 if ~any(currIx)
@@ -550,7 +552,8 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                                     end
                                 else
                                     % calculate particle dose for bixel k on ray j of beam i
-                                    if isfield(pln,'propHeterogeneity') && pln.propHeterogeneity.calcHetero
+                                    if isfield(pln,'propHeterogeneity') && pln.propHeterogeneity.calcHetero && strcmp(pln.propHeterogeneity.type, 'local_pmod')
+                                        %% Stolzenberg modification: addition of ct.cube_pmod in Input of matRad_calcParticleDoseBixel
                                         bixelDose = matRad_calcParticleDoseBixel(...
                                             currRadDepths(currIx), ...
                                             currRadialDist_sq(currIx), ...
@@ -558,7 +561,16 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                                             machine.data(energyIx), ...
                                             currHeteroCorrDepths, ...
                                             pln.propHeterogeneity, ...
-                                            vTissueIndex_j(currIx));
+                                            vTissueIndex_j(currIx),ct.cube_pmod(ix(currIx)));
+                                    elseif isfield(pln,'propHeterogeneity') && pln.propHeterogeneity.calcHetero 
+                                        bixelDose = matRad_calcParticleDoseBixel(...
+                                            currRadDepths(currIx), ...
+                                            currRadialDist_sq(currIx), ...
+                                            sigmaIni_sq, ...
+                                            machine.data(energyIx), ...
+                                            currHeteroCorrDepths, ...
+                                            pln.propHeterogeneity, ...
+                                            vTissueIndex_j(currIx),ct.cube_pmod);
                                     else
                                         bixelDose = matRad_calcParticleDoseBixel(...
                                             currRadDepths(currIx), ...

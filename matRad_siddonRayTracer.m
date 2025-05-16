@@ -107,7 +107,7 @@ alpha_min = max([0 min(aX_1,aX_end) min(aY_1,aY_end) min(aZ_1,aZ_end)]);
 alpha_max = min([1 max(aX_1,aX_end) max(aY_1,aY_end) max(aZ_1,aZ_end)]);
 
 % eq 6
-% Calculate the range of indeces who gives parametric values for
+% Calculate the range of indices who gives parametric values for
 % intersected planes.
 if targetPoint(1) == sourcePoint(1)
     i_min = []; i_max = [];

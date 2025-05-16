@@ -71,15 +71,15 @@ pln.propMC.numHistories = 1e5;
 
 %Enable/Disable use of range shifter (has effect only when we need to fill 
 %up the low-range region)
-pln.propStf.useRangeShifter = true;  
+pln.propStf.useRangeShifter = false;  
 
 % Enable/Disable local computation with TOPAS. Enabling this will generate
 % the necessary TOPAS files to run the simulation on any machine or server.
-% pln.propMC.externalCalculation = true;
+pln.propMC.externalCalculation = true;
 
 %% generate steering file
-stf = matRad_generateStf(ct,cst,pln);
-%stf = matRad_generateSingleBixelStf(ct,cst,pln); %Example to create a single beamlet stf
+%stf = matRad_generateStf(ct,cst,pln);
+stf = matRad_generateSingleBixelStf(ct,cst,pln); %Example to create a single beamlet stf
 
 %% analytical dose calculation
 dij = matRad_calcParticleDose(ct, stf, pln, cst); %Calculate particle dose influence matrix (dij) with analytical algorithm
