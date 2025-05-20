@@ -47,10 +47,10 @@ matRad_cfg.dispInfo('matRad: Particle dose calculation... \n');
 pln = matRad_cfg.getDefaultProperties(pln,{'propDoseCalc'});
 
 if isfield(pln,'propHeterogeneity') && pln.propHeterogeneity.calcHetero
-    pln.propHeterogeneity = matRad_HeterogeneityConfig();
+    % pln.propHeterogeneity = matRad_HeterogeneityConfig();
     pln.propHeterogeneity.bioOpt = pln.bioParam.bioOpt;
     %% Stolzenberg modification:
-    pln.propHeterogeneity.modPower = ct.cube_pmod;
+    % pln.propHeterogeneity.modPower = ct.cube_pmod;
     % matRad_cfg.dispInfo(['Modulation power set to Pmod = ' num2str(pln.propHeterogeneity.modPower) ' µm.\n']);
     cstOriginal = cst;
 end
@@ -95,7 +95,10 @@ if isfield(pln,'propHeterogeneity') && pln.propHeterogeneity.calcHetero
 
     calcHeteroCorrStruct.cube = cell(1,pln.multScen.numOfCtScen);
     calcHeteroCorrStruct.cube(1,:) = {zeros(ct.cubeDim)};
-
+    
+    %% Stolzenberg modification: addition of cube_pmod in calcHeteroCorrStruct
+    calcHeteroCorrStruct.cube_pmod = ct.cube_pmod;
+    %%
     % Fill the new cube(s) with only lung
     for shiftScen = 1:pln.multScen.numOfCtScen
         calcHeteroCorrStruct.cube{shiftScen}(lungVoxel{shiftScen}) = ct.cube{shiftScen}(lungVoxel{shiftScen});
@@ -268,11 +271,16 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
         % Calculate radiological depth cube for heterogeneity correction
         if isfield(pln,'propHeterogeneity') && pln.propHeterogeneity.calcHetero
             matRad_cfg.dispInfo('matRad: calculate radiological depth cube for heterogeneity correction...');
-            heteroCorrDepthV = matRad_rayTracing(stf(i),calcHeteroCorrStruct,VctGrid,rot_coordsV,pln.propDoseCalc.effectiveLateralCutOff);
-
+            %% Stolzenberg modification: addition of pmod V and pmodCube (+ addition of pln)
+            [heteroCorrDepthV, heteroCorrDepthCube, pmodV, pmodCube] = matRad_rayTracing(stf(i),calcHeteroCorrStruct,VctGrid,rot_coordsV,pln.propDoseCalc.effectiveLateralCutOff, pln);
+            %%
             % HETERO interpolate hetero depth cube to dose grid resolution
             heteroCorrDepthV = matRad_interpRadDepth...
                 (ct,VctGrid,VdoseGrid,dij.doseGrid.x,dij.doseGrid.y,dij.doseGrid.z,heteroCorrDepthV);
+            %% Stolzenberg modification : interpolation of pmod cube to dose grid resolution
+            pmodV = matRad_interpRadDepth...
+                (ct,VctGrid,VdoseGrid,dij.doseGrid.x,dij.doseGrid.y,dij.doseGrid.z,pmodV);
+            %%
             matRad_cfg.dispInfo('Done!\n');
         end
 
@@ -338,6 +346,8 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
 
                 if isfield(pln,'propHeterogeneity') && pln.propHeterogeneity.calcHetero
                     heteroCorrDepths = heteroCorrDepthV{shiftScen}(ix);
+                    %% Stolzenberg modification: addition of pmods
+                    pmods = pmodV{shiftScen}(ix);
                 end
 
                 % just use tissue classes of voxels found by ray tracer
@@ -498,6 +508,8 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
 
                                 if isfield(pln,'propHeterogeneity') && pln.propHeterogeneity.calcHetero
                                     currHeteroCorrDepths = heteroCorrDepths(currIx);
+                                    %% Stolzenberg modification: add currPmods
+                                    currPmods = pmods(currIx);
                                 end
 
                                 % select correct initial focus sigma squared
@@ -561,7 +573,7 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                                             machine.data(energyIx), ...
                                             currHeteroCorrDepths, ...
                                             pln.propHeterogeneity, ...
-                                            vTissueIndex_j(currIx),ct.cube_pmod(ix(currIx)));
+                                            vTissueIndex_j(currIx),currPmods);
                                     elseif isfield(pln,'propHeterogeneity') && pln.propHeterogeneity.calcHetero 
                                         bixelDose = matRad_calcParticleDoseBixel(...
                                             currRadDepths(currIx), ...

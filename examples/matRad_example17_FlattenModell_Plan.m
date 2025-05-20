@@ -45,7 +45,7 @@ load('C:\Users\Stolzenberg\Documents\MATLAB\matRad_official\Stolzenberg_files\pm
 ct.cube_pmod = pmodCT.cube_pmod;
 
 % Test worst case:
-% ct.cube_pmod(ct.cube_pmod~=0)=750;
+ct.cube_pmod(ct.cube_pmod~=0)=750;
 %% Test:
 % ct.cube_pmod = 250;
 
@@ -80,7 +80,7 @@ pln.bioParam = matRad_BioModel(pln.radiationMode,quantityOpt,modelName);
 pln.multScen = matRad_multScen(ct,'nomScen'); % optimize on the nominal scenario                                            
 
 pln.propHeterogeneity = matRad_HeterogeneityConfig();
-
+pln.propHeterogeneity.calcHetero = 1;
 %% Generate Beam Geometry STF
 stf = matRad_generateStf(ct,cst,pln);
 % stf = matRad_generateStfPencilBeam(pln,ct);
@@ -94,11 +94,23 @@ resultGUI_homogeneous = matRad_fluenceOptimization(dij,cst,pln);
 cst_withLungFlag = pln.propHeterogeneity.cstHeteroAutoassign(cst);
 
 %% Calculate dose again with heterogeneityCorrection
-resultGUI_heterogeneous = matRad_calcDoseDirect(ct,stf,pln,cst_withLungFlag,resultGUI_homogeneous.w);
+pln.propHeterogeneity = matRad_HeterogeneityConfig();
+pln.propHeterogeneity.calcHetero = 1;
+resultGUI_heterogeneous_Flatten = matRad_calcDoseDirect(ct,stf,pln,cst_withLungFlag,resultGUI_homogeneous.w);
+
+pln.propHeterogeneity.type = 'voxelwise';
+pln.propHeterogeneity.modPower = 750;
+pln.propHeterogeneity.calcHetero = 1;
+
+resultGUI_heterogeneous_Winter = matRad_calcDoseDirect(ct,stf,pln,cst_withLungFlag,resultGUI_homogeneous.w);
 
 %% Visualize differences
 % matRad_compareDose(carbHomo.physicalDose,carbHetero.physicalDose,ct,cst,[1 0 0]);
-matRad_compareDose(resultGUI_homogeneous.physicalDose,resultGUI_heterogeneous.physicalDose,ct,cst,[1 1 0]);
+% Homo vs. Flatten
+% matRad_compareDose(resultGUI_homogeneous.physicalDose,resultGUI_heterogeneous_Flatten.physicalDose,ct,cst,[1 1 0]);
+% Flatten vs. Winter
+matRad_compareDose(resultGUI_heterogeneous_Flatten.physicalDose,resultGUI_heterogeneous_Winter.physicalDose,ct,cst,[1 1 0], [], pln);
+
 
 %  Plot parameter:
 set(groot, 'defaultLineLineWidth', 3);          % Standard-Linienstärke

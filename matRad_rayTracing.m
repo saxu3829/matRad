@@ -1,4 +1,4 @@
-function [radDepthV, radDepthCube] = matRad_rayTracing(stf,ct,V,rot_coordsV,lateralCutoff)
+function [radDepthV, radDepthCube, pmodV, pmodCube] = matRad_rayTracing(stf,ct,V,rot_coordsV,lateralCutoff, pln)
 % matRad visualization of two-dimensional dose distributions on ct including
 % segmentation
 % 
@@ -11,11 +11,14 @@ function [radDepthV, radDepthCube] = matRad_rayTracing(stf,ct,V,rot_coordsV,late
 %   V:             linear voxel indices e.g. of voxels inside patient.
 %   rot_coordsV    coordinates in beams eye view inside the patient
 %   lateralCutoff: lateral cut off used for ray tracing
+%   pln:           plan information (needed for heterogeneity correction)
 
 %
 % output
 %   radDepthV:      radiological depth inside the patient
 %   radDepthCube:   radiological depth in whole ct
+%   pmodV:          mean modulation strength inside the patient
+%   pmodCube:          mean modulation strength in whole ct
 %
 % References
 %   [1] http://www.sciencedirect.com/science/article/pii/S1120179711001359
@@ -35,6 +38,14 @@ function [radDepthV, radDepthCube] = matRad_rayTracing(stf,ct,V,rot_coordsV,late
 
 % set up rad depth cube for results
 radDepthCube = repmat({NaN*ones(ct.cubeDim)},ct.numOfCtScen);
+
+%% Stolzenberg modification: Addition of heterogeneity correction (Pmod)
+
+if isfield(pln,'propHeterogeneity') && pln.propHeterogeneity.calcHetero
+    % set up rad depth cube for results
+    pmodCube = repmat({NaN*ones(ct.cubeDim)},ct.numOfCtScen);
+end
+%%
 
 % set up ray matrix direct behind last voxel
 rayMx_bev_y = max(rot_coordsV(:,2)) + max([ct.resolution.x ct.resolution.y ct.resolution.z]);
@@ -121,6 +132,25 @@ for i = 1:size(rayMx_world,1)
 
             % write radiological depth for voxel which we want to remember
             radDepthCube{j}(ixHitVoxel(ixRememberFromCurrTracing)) = dCum(ixRememberFromCurrTracing);
+
+            %% Stolzenberg modification: Addition of heterogeneity correction (Pmod) 
+            if isfield(pln,'propHeterogeneity') && pln.propHeterogeneity.calcHetero
+                % Calculate the mean pmod of the voxels leading up the
+                % voxel that we want to remember for rayTracing (only for
+                % non-zero pmod values)
+                
+                pmodMean = arrayfun(@(ixloop) compute_mean_nonzero(ixHitVoxel, ct.cube_pmod, ixloop), find(ixRememberFromCurrTracing));
+                
+                
+                % if any(pmodMean~=0)
+                %     disp(pmodMean)
+                % end
+     
+                % write radiological depth for voxel which we want to remember
+                pmodCube{j}(ixHitVoxel(ixRememberFromCurrTracing)) = pmodMean;
+            end
+            %%
+
         end
     end  
     
@@ -129,6 +159,23 @@ end
 % only take voxel inside the patient
 for i = 1:ct.numOfCtScen
     radDepthV{i} = radDepthCube{i}(V);
+    %% Stolzenberg modification: Addition of heterogeneity correction (Pmod)
+    if isfield(pln,'propHeterogeneity') && pln.propHeterogeneity.calcHetero
+        for i = 1:ct.numOfCtScen
+            pmodV{i} = pmodCube{i}(V);
+        end
+    end
 end
 
-
+%% Stolzenberg modification: function to filter non-zero values out
+function m = compute_mean_nonzero(X, Y, i)
+    xi = X(1:i);
+    yi = Y(xi);
+    yi = yi(yi ~= 0);
+    if isempty(yi)
+        m = 0;  % Oder z. B. m = 0;
+    else
+        m = mean(yi);
+    end
+end
+end

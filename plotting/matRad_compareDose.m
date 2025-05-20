@@ -147,8 +147,8 @@ if enable(1) == 1
     % Calculate absolute difference cube and dose windows for plots
     differenceCube  = cube1-cube2;
     doseDiffWindow  = [-max(differenceCube(:)) max(differenceCube(:))];
-    doseGammaWindow = [0 max(gammaCube(:))];
-    %doseGammaWindow = [0 2]; %We choose 2 as maximum value since the gamma colormap has a sharp cut in the middle
+    %doseGammaWindow = [0 max(gammaCube(:))];
+    doseGammaWindow = [0 2]; %We choose 2 as maximum value since the gamma colormap has a sharp cut in the middle
     
     
     % Plot everything
@@ -303,6 +303,153 @@ if enable(3) == 1 && ~isempty(cst)
     title('Dose Volume Histrogram, Dose 1: solid, Dose 2: dashed')
 end
 %%
+
+%% Stolzenberg modification: Adding of plots that look nice for presentations
+set(groot, 'defaultLineLineWidth', 3);          % Standard-Linienstärke
+set(groot, 'defaultAxesFontSize', 13);         % Standard-Schriftgröße der Achsen
+set(groot, 'defaultAxesLineWidth', 1.5);       % Rahmenbreite der Achsen
+set(groot, 'defaultTextFontSize', 12);         % Schriftgröße für Titel und Beschriftungen
+set(groot, 'defaultFigureColor', 'w');         % Hintergrundfarbe der Figur (weiß)
+set(groot, 'defaultAxesGridLineStyle', '--');  % Stil der Gitternetzlinien
+set(groot, 'DefaultTextInterpreter', 'latex');
+set(groot, 'DefaultAxesTickLabelInterpreter', 'latex');
+set(groot, 'DefaultLegendInterpreter', 'latex');
+set(groot, 'DefaultColorbarTickLabelInterpreter', 'latex'); 
+set(groot, 'defaultColorbarFontSize', 12);
+set(groot, 'defaultColorbarFontWeight', 'bold');
+set(groot, 'defaultColorbarFontAngle', 'normal');
+set(groot, 'defaultColorbarLineWidth', 1);
+set(groot, 'defaultAxesTitleFontSizeMultiplier', 1);
+
+% Gamma index:
+for plane = 1:3
+    figure;
+    t = tiledlayout(1,1);
+    % Hintergrund
+    ax1 = axes(t);
+    if plane == 1
+        hB = imagesc(squeeze(gammaCube(slicename{plane},:,:)), 'AlphaData',0.5,'Parent', ax1);
+    elseif plane == 2
+        hB = imagesc(squeeze(gammaCube(:,slicename{plane},:)), 'AlphaData',0.5,'Parent', ax1);
+    else
+        hB = imagesc(squeeze(gammaCube(:,:,slicename{plane})), 'AlphaData',0.5,'Parent', ax1);
+    end
+    
+    % axis image off;
+    colormap(ax1, jet);
+    % Vordergrund
+    ax2 = axes(t);
+    if plane == 1
+        hA = imagesc(squeeze(ct.cubeHU{1,1}(slicename{plane},:,:)),'Parent', ax2);
+    elseif plane == 2
+        hA = imagesc(squeeze(ct.cubeHU{1,1}(:,slicename{plane},:)),'Parent', ax2);
+    else
+        hA = imagesc(squeeze(ct.cubeHU{1,1}(:,:,slicename{plane})),'Parent', ax2);
+    end
+
+    set(hA, 'AlphaData', 0.5);
+    colormap(ax2, gray);
+    title(ax1,sprintf('GPR %.5g%% for points > %d%% dose (%d%% / %d mm) with %d IP', ...
+    gammaPassRate{1,2}, relDoseThreshold, relDoseThreshold, dist2AgreeMm, 2^n - 1)) % IP: interpolation points, GPR: Gamma Pass Rate
+    
+    
+    % axis image off;
+    
+    
+    % Colorbar für B
+    c=colorbar(ax1);% Achsen überlagern
+    c.Label.String = '\gamma';
+    if plane == 1
+        clim(ax1, [0, max(max(gammaCube(slicename{plane},:,:)))+1e-4])
+    elseif plane == 2
+        clim(ax1, [0, max(max(gammaCube(:,slicename{plane},:)))+1e-4])
+    else
+        clim(ax1, [0, max(max(gammaCube(:,:,slicename{plane})))+1e-4])
+    end
+    ax2.Position = ax1.Position;
+    linkaxes([ax1 ax2]);
+    ax2.XTick =[];
+    ax2.YTick =[];
+    ax2.Visible = 'off';
+    set(ax2, 'Color', 'none')
+    if plane == 1
+        xlabel(ax1,'y[mm]'); ylabel(ax1,'z[mm]');
+    elseif plane == 2
+        xlabel(ax1,'x[mm]'); ylabel(ax1,'z[mm]');
+    else
+        xlabel(ax1,'x[mm]'); ylabel(ax1,'y[mm]');
+    end
+    axis (ax1, 'on')
+    ax2.Position = ax1.Position;
+    linkaxes([ax1 ax2]);
+end
+% Absolute dose difference:
+for plane = 1:3
+    figure;
+    t = tiledlayout(1,1);
+    % Hintergrund
+    ax1 = axes(t);
+    if plane == 1
+        hB = imagesc(squeeze(differenceCube(slicename{plane},:,:)), 'AlphaData',0.5,'Parent', ax1);
+    elseif plane == 2
+        hB = imagesc(squeeze(differenceCube(:,slicename{plane},:)), 'AlphaData',0.5,'Parent', ax1);
+    else
+        hB = imagesc(squeeze(differenceCube(:,:,slicename{plane})), 'AlphaData',0.5,'Parent', ax1);
+    end
+    
+    % axis image off;
+    colormap(ax1, jet);
+    % Vordergrund
+    ax2 = axes(t);
+    if plane == 1
+        hA = imagesc(squeeze(ct.cubeHU{1,1}(slicename{plane},:,:)),'Parent', ax2);
+    elseif plane == 2
+        hA = imagesc(squeeze(ct.cubeHU{1,1}(:,slicename{plane},:)),'Parent', ax2);
+    else
+        hA = imagesc(squeeze(ct.cubeHU{1,1}(:,:,slicename{plane})),'Parent', ax2);
+    end
+
+    set(hA, 'AlphaData', 0.5);
+    colormap(ax2, gray);
+    title(ax1,sprintf('Integral energy difference = %1.2g%%',(1-abs(intEnergy1-intEnergy2)/intEnergy1*100))); 
+    
+    
+    % axis image off;
+    
+    
+    % Colorbar für B
+    c=colorbar(ax1);% Achsen überlagern
+    c.Label.String = '\DeltaD in Gy';
+    if plane == 1
+        lim = max([abs(min(min(differenceCube(slicename{plane},:,:)))-1e-4), max(max(differenceCube(slicename{plane},:,:)))+1e-4]);
+        clim(ax1, [-lim, +lim])
+    elseif plane == 2
+        lim = max([abs(min(min(differenceCube(:,slicename{plane},:)))-1e-4), max(max(differenceCube(:,slicename{plane},:)))+1e-4]);
+        clim(ax1, [-lim, +lim])
+    else
+        lim = max([abs(min(min(differenceCube(:,:,slicename{plane})))-1e-4), max(max(differenceCube(:,:,slicename{plane})))+1e-4]);
+        clim(ax1, [-lim, +lim])
+    end
+    ax2.Position = ax1.Position;
+    linkaxes([ax1 ax2]);
+    ax2.XTick =[];
+    ax2.YTick =[];
+    ax2.Visible = 'off';
+    set(ax2, 'Color', 'none')
+    if plane == 1
+        xlabel(ax1,'y[mm]'); ylabel(ax1,'z[mm]');
+    elseif plane == 2
+        xlabel(ax1,'x[mm]'); ylabel(ax1,'z[mm]');
+    else
+        xlabel(ax1,'x[mm]'); ylabel(ax1,'y[mm]');
+    end
+    axis (ax1, 'on')
+    ax2.Position = ax1.Position;
+    linkaxes([ax1 ax2]);
+end
+%%
+
+
 matRad_cfg.dispInfo('Done!\n');
 
 end
