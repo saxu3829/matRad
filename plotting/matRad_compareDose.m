@@ -145,7 +145,7 @@ if enable(1) == 1
     
     
     % Calculate absolute difference cube and dose windows for plots
-    differenceCube  = cube1-cube2;
+    differenceCube  = (cube1-cube2);
     doseDiffWindow  = [-max(differenceCube(:)) max(differenceCube(:))];
     %doseGammaWindow = [0 max(gammaCube(:))];
     doseGammaWindow = [0 2]; %We choose 2 as maximum value since the gamma colormap has a sharp cut in the middle
@@ -384,8 +384,16 @@ for plane = 1:3
     linkaxes([ax1 ax2]);
 end
 % Absolute dose difference:
+%% Relative dose differences:
+target = {'CTV'};
+for i = 1:length(cst(:,1))
+    if any(cellfun(@(teststr) ~isempty(strfind(cst{i,2},teststr)), target))
+        ct.planDose = cst{i,6}{1,1}.parameters{1};
+    end
+end
+differenceCube = differenceCube./(ct.planDose/pln.numOfFractions)*100;
 for plane = 1:3
-    figure;
+    fig = figure;
     t = tiledlayout(1,1);
     % Hintergrund
     ax1 = axes(t);
@@ -419,7 +427,8 @@ for plane = 1:3
     
     % Colorbar für B
     c=colorbar(ax1);% Achsen überlagern
-    c.Label.String = '\DeltaD in Gy';
+    % c.Label.String = '\DeltaD in Gy'; % Absolute dose difference
+    c.Label.String = '\DeltaD in %'; % Relative dose difference
     if plane == 1
         lim = max([abs(min(min(differenceCube(slicename{plane},:,:)))-1e-4), max(max(differenceCube(slicename{plane},:,:)))+1e-4]);
         clim(ax1, [-lim, +lim])
@@ -446,6 +455,8 @@ for plane = 1:3
     axis (ax1, 'on')
     ax2.Position = ax1.Position;
     linkaxes([ax1 ax2]);
+    % saveas(fig, filename);       % Figure abspeichern
+    close(fig);                  % Figure schließen
 end
 %%
 

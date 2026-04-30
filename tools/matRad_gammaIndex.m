@@ -75,7 +75,7 @@ if ~isequal(size(cube1),size(cube2))
    error('dose cubes must be the same size\n'); 
 end
 
-% define search nighborhood and resolution
+% define search neighborhood and resolution
 if round(n) ~= n
     error('n must be an integer value');
 else
@@ -171,7 +171,12 @@ gammaCube                    = sqrt(gammaCubeSqx);
 gammaCube(cube1<=0 & cube2<=0) = 0;
   
 % compute gamma pass rate
+%% old definition of lower dose threshold:
 doseIx          = cube1 > relDoseThreshold/100*max(cube1(:)) | cube2 > relDoseThreshold/100*max(cube2(:));
+%% Stolzenberg modification: 
+% set gammaCube von lower dose threshold to zero:
+gammaCube(~doseIx) = NaN;
+%%
 numOfPassGamma  = sum(gammaCube(doseIx) < 1);
 gammaPassRate   = 100 * numOfPassGamma / sum(doseIx(:));
 

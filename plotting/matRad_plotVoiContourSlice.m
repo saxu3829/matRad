@@ -52,6 +52,9 @@ else
     for i = 1:size(cst,1)
         if isfield(cst{i,5},'visibleColor')
             colors(i,:) = cst{i,5}.visibleColor;
+            if colors(i,:) == [1 1 1]
+                colors(i,:) = [0.5 0 0];
+            end
         else
             colors(i,:) = [0 0 0];
         end
