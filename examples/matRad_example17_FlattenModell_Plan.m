@@ -22,14 +22,13 @@
 tic
 clear; clc
 %% 0) Load CT
-% load '\\david.lse.thm.de\Jessica\MATLAB\phantoms\Patient_0_Flatten.mat'
-load '\\david.lse.thm.de\Jessica\MATLAB\phantoms\Waterphantom_10x10x32cm_target_5cm.mat'
-% % Show an image of the CT slice with the lung:
-% image(ct.cubeHU{1,1}(:,:,50),'CDataMapping','scaled');
-% xlabel('x in mm');
-% ylabel('y in mm');
-% colorbar
-
+load '\\david.lse.thm.de\Jessica\MATLAB\phantoms\Patient_0_Flatten.mat'
+% load '\\david.lse.thm.de\Jessica\MATLAB\phantoms\Waterphantom_10x10x32cm_target_5cm.mat'
+% Show an image of the CT slice with the lung:
+image(ct.cubeHU{1,1}(:,:,50),'CDataMapping','scaled');
+xlabel('x in mm');
+ylabel('y in mm');
+colorbar
 
 cluster_size = 7; % Changes the size of the resulting blocks
 bin_division = 10;

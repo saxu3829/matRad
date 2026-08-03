@@ -261,10 +261,10 @@ classdef MatRad_Config < handle
             obj.propMC.default_proton_engine = 'matRad_MCsquareConfig';
             obj.propMC.default_carbon_engine = 'matRad_TopasConfig';
 
-            obj.propHeterogeneity.defaultType = 'complete'; % 'depthBased','voxelwise'
+            obj.propHeterogeneity.defaultType = 'complete'; % 'depthBased','voxelwise', 'local'
             obj.propHeterogeneity.defaultCalcHetero = true;
             obj.propHeterogeneity.defaultUseOriginalDepths = true; % use original base data depths instead of fitted ones
-            obj.propHeterogeneity.defaultUodulateBioDose = true; % use alpha beta curves for RBE
+            obj.propHeterogeneity.defaultModulateBioDose = true; % use alpha beta curves for RBE
 
             obj.defaults.samplingScenarios = 2;
 

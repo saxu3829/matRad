@@ -140,7 +140,7 @@ if ignoreOutsideDensities
     end
 end
 
-% ser overlap prioriites
+% set overlap prioriites
 cst = matRad_setOverlapPriorities(cst);
 
 % resizing cst to dose cube resolution

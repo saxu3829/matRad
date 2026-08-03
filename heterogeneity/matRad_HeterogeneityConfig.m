@@ -27,8 +27,11 @@ classdef matRad_HeterogeneityConfig < handle
         useOriginalDepths = false;
         bioOpt = false;
 
+
         modulateLET = false;
         modulateBioDose = false;
+        %% Stolzenberg implementation:
+        modulateRBE = true;
 
         % "medium" modulation power
         % Pmod = 256; % [µm]
@@ -57,7 +60,35 @@ classdef matRad_HeterogeneityConfig < handle
             % Function handle for calculating lateral dose
             out = 1./(sqrt(2*pi.*SqSigma)).*exp(-((x - mu).^2./(2.*SqSigma)));
         end
+        %% Stolzenberg RBE modulation implementation:
+        function out = GaussBio(~,x,A,mu,sigma)
+            % Function handle for calculating lateral dose
+            out = A./(sqrt(2*pi.*sigma^2)).*exp(-((x - mu).^2./(2.*sigma^2)));
+        end
+        function [A, mu, sigma] = Biofitparam(~, fitparam, WET,E, Pmod)
+                % Function handle to calculate Gaussian parameters out of
+                % the given beam parameters: water-equivalent depth in lung(WET), 
+                % energy(E), and modulation strength (Pmod)
+                % fitparam  = [a0 a1 a2 a3  b0 b1 b2 b3  c0 c1 c2 c3]
+                % (1x12)
+                % Fitparameters previously obtained using Monte Carlo
+                % simulations
+                % fitparam = [a0 a1 a2 a3  b0 b1 b2 b3  c0 c1 c2 c3]  (1×12)
+                % WET  =  double vector (?x1)
+                % E  =  double vector (?x1)
+                % Pmod  =  double vector (?x1)
+                
 
+                if length(fitparam) ~= 12
+                    error('fitparam muss genau 12 Elemente haben.');
+                end
+                % linear combination of above mentioned parameters:
+                A   = fitparam(1) + fitparam(2)*E + fitparam(3)*WET + fitparam(4)*Pmod;
+                mu  = fitparam(5) + fitparam(6)*E + fitparam(7)*WET + fitparam(8)*Pmod;
+                sigma = fitparam(9) + fitparam(10)*E + fitparam(11)*WET + fitparam(12)*Pmod;
+        end
+        
+        %%
         function out = sumGauss(~,x,mu,SqSigma,w)
             % Function handle for calculating depth doses
             out = (1./sqrt(2*pi*ones(numel(x),1) .* SqSigma') .* exp(-bsxfun(@minus,x,mu').^2 ./ (2* ones(numel(x),1) .* SqSigma' ))) * w;

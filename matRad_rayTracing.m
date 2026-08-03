@@ -146,7 +146,7 @@ for i = 1:size(rayMx_world,1)
                 %     disp(pmodMean)
                 % end
      
-                % write radiological depth for voxel which we want to remember
+                % write pmod for voxel which we want to remember
                 pmodCube{j}(ixHitVoxel(ixRememberFromCurrTracing)) = pmodMean;
             end
             %%

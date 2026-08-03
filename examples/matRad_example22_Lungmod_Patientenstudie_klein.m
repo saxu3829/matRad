@@ -14,8 +14,8 @@
 tic
 clear; clc
 %% CT file paths:
-% Patients = ["Patient_0_Flatten.mat", "Patient_2_Flatten.mat", "Patient_4_Flatten.mat"];
-Patients = ["Annika2.mat"];
+ Patients = ["Patient_0_Flatten.mat"];%, "Patient_2_Flatten.mat", "Patient_4_Flatten.mat"];
+% Patients = ["Annika1.mat"];
 folder = 'C:\Users\Stolzenberg\Documents\MATLAB\matRad_official\phantoms';
 folder_Pmod = '\\david.lse.thm.de\Jessica\MATLAB\Pmod_Patients';
 filedir_gamma = fullfile(folder_Pmod, "Gamma");
@@ -41,7 +41,7 @@ for i = 1:length(Patients)
     % patientID = token{1}{1};
     patientID = "2";
     patientTitle = strrep(patientID, '_', ' ');
-    cst{17,6}=[];
+    % cst{17,6}=[];
     %% dose constraints des PTV wie in Marburg (nach Kilian) --> D_min = 100%, D_max = 100% und D_max = 105%
     % hier werden für die Pläne bisher nur Dose constraints für das PTV
     % verwendet, da andere Constraints zu schlechten Plänen geführt haben,
@@ -68,11 +68,11 @@ for i = 1:length(Patients)
 
     %% calculate PmodCT for patient:
     % Load PmodCT files for patient:
-    % pmod_path = fullfile(folder_Pmod, append('Pmod_',Patients(i)));
-    % load(char(pmod_path))
-    % pmodct.pmod(pmodct.pmod<0) = 0;
-    % pmodct.pmod(pmodct.pmod>900) = 900;
-    % pmodCT(i).pmod = pmodct.pmod;
+    pmod_path = fullfile(folder_Pmod, append('Pmod_',Patients(i)));
+    load(char(pmod_path))
+    pmodct.pmod(pmodct.pmod<0) = 0;
+    pmodct.pmod(pmodct.pmod>900) = 900;
+    pmodCT(i).pmod = pmodct.pmod;
     
     %% Den Teil auskommentieren für Lungenmodulation weglassen:
     % Calculate pmodCT locally inside matLab:
@@ -85,14 +85,18 @@ for i = 1:length(Patients)
     block_size = [cluster_size, cluster_size, cluster_size];
 
 
-    pln.radiationMode   = 'protons';     % protons / carbon
+    pln.radiationMode   = 'carbon';     % protons / carbon
     pln.machine         =  'HIT_APM';% 'Generic_APM';
 
-    modelName           = 'none';
-    quantityOpt         = 'physicalDose';
+    %modelName           = 'none';
+    %quantityOpt         = 'physicalDose';
 
     % modelName    = 'constRBE';
     % quantityOpt  = 'RBExD';
+
+    modelName    = 'LEM';
+    quantityOpt  = 'RBExD';
+
 
     % The remaining plan parameters are set like in the previous example files
     pln.numOfFractions = 10;
