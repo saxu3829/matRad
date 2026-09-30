@@ -178,11 +178,8 @@ if propHeterogeneity.bioOpt
             if tissueClasses == 0
                 matRad_cfg.dispError('Error in Heterogeneity correction: TissueIndex not assigned. ');
             end
-
             % Load fitparameters obtained from Monte Carlo simulations:
             load('Fit_alpha_beta_gaussian.mat');
-            [A_alpha, mu_alpha, sigma_alpha] = propHeterogeneity.Biofitparam(fit.param_a,heteroCorrDepths./10,baseData.energy, pmod.*10^(-6));
-            [A_beta, mu_beta, sigma_beta] = propHeterogeneity.Biofitparam(fit.param_b,heteroCorrDepths./10,baseData.energy, pmod.*10^(-6));
             
             bixel.Z_Aij = zeros(numel(radDepths),1);
             bixel.Z_Bij = zeros(numel(radDepths),1);
@@ -190,40 +187,68 @@ if propHeterogeneity.bioOpt
             % define gaussian:
             resolution   = min(diff(baseData.depths));
             bixel.heteroCorr.SigmaSq = propHeterogeneity.getHeterogeneityCorrSigmaSq(heteroCorrDepths,pmod);
+
+            if any(bixel.heteroCorr.SigmaSq~=0)
+                % nur für den Test des Algorithmus: setzt alle WET der
+                % Convolution auf die ganze Lungentiefen:
+                [~,lungDepthAtBraggPeakIx] = min(abs(radialDist_sq+(radDepths-baseData.peakPos).^2));
+                lungDepthAtBraggPeak = heteroCorrDepths(lungDepthAtBraggPeakIx).*ones(length(radDepths),1);
+                if any(pmod~=0)
+                    disp([lungDepthAtBraggPeak pmod])
+                end
+                if isfield(propHeterogeneity, 'testRBE') && pln.propHeterogeneity.testRBE
+                    % Berechnung für die maximale radiol. Lungentiefe:
+                    [A_alpha, mu_alpha, sigma_alpha] = propHeterogeneity.Biofitparam(fit.param_a,lungDepthAtBraggPeak,baseData.energy, pmod);
+                    [A_beta, mu_beta, sigma_beta] = propHeterogeneity.Biofitparam(fit.param_b,lungDepthAtBraggPeak,baseData.energy, pmod);
+                else
+                    % % normale Berechnung mit lokalen radiol. Lungentiefen:
+                    [A_alpha, mu_alpha, sigma_alpha] = propHeterogeneity.Biofitparam(fit.param_a,heteroCorrDepths,baseData.energy, pmod);
+                    [A_beta, mu_beta, sigma_beta] = propHeterogeneity.Biofitparam(fit.param_b,heteroCorrDepths,baseData.energy, pmod);
+                end              
+            end
+
             for i=1:length(radDepths)
                 ix = vTissueIndex(i);  
                 if bixel.heteroCorr.SigmaSq(i)~=0
                     %convolution needed: first define a finer dose grid to obtain the same resolution at each point 
-                    bixel.heteroCorr.conv(i).fineGridradDepths = min(baseData.depths)-3*sqrt(bixel.heteroCorr.SigmaSq(i)):resolution:max(baseData.depths)+3*sqrt(bixel.heteroCorr.SigmaSq(i));
-                    sigmaSq_eff = bsxfun(@plus, baseData.Z.width'.^2, bixel.heteroCorr.SigmaSq(i));
-                    sigmaSq_eff = ones(numel(bixel.heteroCorr.conv(i).fineGridradDepths),1)*sigmaSq_eff;
-                    bixel.heteroCorr.conv(i).Z_conv = propHeterogeneity.sumGauss(bixel.heteroCorr.conv(i).fineGridradDepths',baseData.Z.mean,sigmaSq_eff',baseData.Z.weight);
-                    alpha_interp = matRad_interp1(baseData.depths, baseData.alpha, bixel.heteroCorr.conv(i).fineGridradDepths, 'extrap');
-                    alphaDose = bixel.heteroCorr.conv(i).Z_conv.*alpha_interp;
-                    beta_interp = matRad_interp1(baseData.depths, baseData.beta, bixel.heteroCorr.conv(i).fineGridradDepths, 'extrap');
-                    sqrtbetaDose = bixel.heteroCorr.conv(i).Z_conv.*sqrt(beta_interp);
+                    % basierend auf der gesamten TDK Kurve:
+                    % bixel.heteroCorr.conv(i).fineGridradDepths = min(baseData.depths)-3*sqrt(bixel.heteroCorr.SigmaSq(i)):resolution:max(baseData.depths)+3*sqrt(bixel.heteroCorr.SigmaSq(i));
+                    % sigmaSq_eff = bsxfun(@plus, baseData.Z.width'.^2, bixel.heteroCorr.SigmaSq(i));
+                    % sigmaSq_eff = ones(numel(bixel.heteroCorr.conv(i).fineGridradDepths),1)*sigmaSq_eff;
+                    % bixel.heteroCorr.conv(i).Z_conv = propHeterogeneity.sumGauss(bixel.heteroCorr.conv(i).fineGridradDepths',baseData.Z.mean,sigmaSq_eff',baseData.Z.weight);
+                    % alpha_interp = matRad_interp1(baseData.depths, baseData.alpha, bixel.heteroCorr.conv(i).fineGridradDepths, 'extrap');
+                    % alphaDose = bixel.heteroCorr.conv(i).Z_conv.*alpha_interp;
+                    % beta_interp = matRad_interp1(baseData.depths, baseData.beta, bixel.heteroCorr.conv(i).fineGridradDepths, 'extrap');
+                    % sqrtbetaDose = bixel.heteroCorr.conv(i).Z_conv.*sqrt(beta_interp);
+                    
+                    % basierend auf den radDepths (rayTracing Tiefen):
+                    bixel.heteroCorr.conv(i).Z =bixel.Z(i);
+                    bixel.heteroCorr.conv(i).fineGridradDepths = min(baseData.depths)-5*sqrt(bixel.heteroCorr.SigmaSq(i)):resolution:max(baseData.depths)+5*sqrt(bixel.heteroCorr.SigmaSq(i));
+                    bixel.heteroCorr.conv(i).alphaDose = bixel.Z(i).*baseData.alpha(:,ix);
+                    alphaDose_interp = matRad_interp1(baseData.depths, bixel.heteroCorr.conv(i).alphaDose, bixel.heteroCorr.conv(i).fineGridradDepths, 'extrap');
+                    bixel.heteroCorr.conv(i).sqrtbetaDose = bixel.Z(i).*sqrt(baseData.beta(:,ix));
+                    sqrtbetaDose_interp = matRad_interp1(baseData.depths, bixel.heteroCorr.conv(i).sqrtbetaDose, bixel.heteroCorr.conv(i).fineGridradDepths, 'extrap');
                     
                     % alpha convolution:
-                    gaussNumOfPoints = round(6*sqrt(sigma_alpha(i))/resolution);
+                    gaussNumOfPoints = round(10*sqrt(sigma_alpha(i))/resolution);
                     gaussWidth = linspace(-resolution*fix(gaussNumOfPoints/2), resolution*fix(gaussNumOfPoints/2), gaussNumOfPoints);
                     %save normalize Gaussian and grids
                     bixel.heteroCorr.conv(i).Gauss_alpha = propHeterogeneity.GaussBio(gaussWidth,A_alpha(i),mu_alpha(i),sigma_alpha(i));
                     % bixel.heteroCorr.conv(i).Gauss_alpha = bixel.heteroCorr.conv(i).Gauss_alpha/sum(bixel.heteroCorr.conv(i).Gauss_alpha);
                     
-                    bixel.heteroCorr.conv(i).alphaDoseConv = conv(alphaDose(:,ix),bixel.heteroCorr.conv(i).Gauss_alpha,'same');
-                    % Interpolation to radiological depth point:
-                    bixel.Z_Aij(i) = conversionFactor * ...
-                        matRad_interp1(bixel.heteroCorr.conv(i).fineGridradDepths,bixel.heteroCorr.conv(i).alphaDoseConv,radDepths(i),'extrap');
+                    bixel.heteroCorr.conv(i).alphaDoseConv = conv(alphaDose_interp,bixel.heteroCorr.conv(i).Gauss_alpha,'same');
                     
                     % beta convolution:
-                    gaussNumOfPoints = round(6*sqrt(sigma_beta(i))/resolution);
+                    gaussNumOfPoints = round(10*sqrt(sigma_beta(i))/resolution);
                     gaussWidth = linspace(-resolution*fix(gaussNumOfPoints/2), resolution*fix(gaussNumOfPoints/2), gaussNumOfPoints);
                     %save normalize Gaussian and grids
                     bixel.heteroCorr.conv(i).Gauss_beta = propHeterogeneity.GaussBio(gaussWidth,A_beta(i),mu_beta(i),sigma_beta(i));
                     % bixel.heteroCorr.conv(i).Gauss_beta = bixel.heteroCorr.conv(i).Gauss_beta/sum(bixel.heteroCorr.conv(i).Gauss_beta);
                     
-                    bixel.heteroCorr.conv(i).betaDoseConv = conv(sqrtbetaDose(:,ix),bixel.heteroCorr.conv(i).Gauss_beta,'same');
+                    bixel.heteroCorr.conv(i).betaDoseConv = conv(sqrtbetaDose_interp,bixel.heteroCorr.conv(i).Gauss_beta,'same');
                     % Interpolation to radiological depth point:
+                    bixel.Z_Aij(i) = conversionFactor * ...
+                        matRad_interp1(bixel.heteroCorr.conv(i).fineGridradDepths,bixel.heteroCorr.conv(i).alphaDoseConv,radDepths(i),'extrap');
                     bixel.Z_Bij(i) = conversionFactor * ...
                         matRad_interp1(bixel.heteroCorr.conv(i).fineGridradDepths,bixel.heteroCorr.conv(i).betaDoseConv,radDepths(i),'extrap');
                     
@@ -238,6 +263,9 @@ if propHeterogeneity.bioOpt
                     bixel.Z_Bij(i) = conversionFactor * ...
                         matRad_interp1(baseData.depths,sqrtBetaDose,radDepths(i),'extrap');
                 end
+            end
+            if any(isnan(bixel.Z_Aij(:))) || all(bixel.Z_Aij(:) == 0) || any(isnan(bixel.Z_Bij(:))) || all(bixel.Z_Bij(:) == 0)
+                matRad_cfg.dispError('unexpected NaN or all zero detected in heterogeneity convolution.')
             end
         else
             matRad_cfg.dispWarning('Modulation of RBE activated but no local modulation type is set.');
