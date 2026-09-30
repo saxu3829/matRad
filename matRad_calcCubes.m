@@ -108,6 +108,12 @@ elseif any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'alpha')), fieldna
         % Check if combination is a field in dij, otherwise skip
         if isfield(dij,['mAlphaDose' RBE_model{j}])
             for i = 1:length(beamInfo)
+                %% Stolzenberg implementation: save bixelDose 
+                % for testing of RBE:
+                if isfield(dij,'bixelDose')
+                    resultGUI.(['bixelDose', RBE_model{j}, beamInfo(i).suffix])       = dij.('bixelDose') ;
+                end
+                %%
                 % Get weights of current beam
                 wBeam = (resultGUI.w .* beamInfo(i).logIx);
 
