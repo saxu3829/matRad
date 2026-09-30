@@ -656,5 +656,7 @@ for i = 1:length(pln.propStf.gantryAngles)
     end
 end    
 % add label to recognize single pencil beam
-stf.singlePencil = 0;
+if ~isfield(stf, "singlePencil")
+    stf.singlePencil = 0;
+end
 end

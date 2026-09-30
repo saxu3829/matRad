@@ -345,8 +345,9 @@ if visBool
     end
 
 % add label to recognize single pencil beam
-stf.singlePencil = 0;
-
+if ~isfield(stf, "singlePencil")
+    stf.singlePencil = 0;
+end
 
 
 end
