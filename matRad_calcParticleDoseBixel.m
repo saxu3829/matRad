@@ -179,7 +179,7 @@ if propHeterogeneity.bioOpt
                 matRad_cfg.dispError('Error in Heterogeneity correction: TissueIndex not assigned. ');
             end
             % Load fitparameters obtained from Monte Carlo simulations:
-            load('Fit_alpha_beta_gaussian.mat');
+            load('fitParams_alpha_beta.mat');
             
             bixel.Z_Aij = zeros(numel(radDepths),1);
             bixel.Z_Bij = zeros(numel(radDepths),1);
@@ -198,12 +198,12 @@ if propHeterogeneity.bioOpt
                 end
                 if isfield(propHeterogeneity, 'testRBE') && pln.propHeterogeneity.testRBE
                     % Berechnung für die maximale radiol. Lungentiefe:
-                    [A_alpha, mu_alpha, sigma_alpha] = propHeterogeneity.Biofitparam(fit.param_a,lungDepthAtBraggPeak,baseData.energy, pmod);
-                    [A_beta, mu_beta, sigma_beta] = propHeterogeneity.Biofitparam(fit.param_b,lungDepthAtBraggPeak,baseData.energy, pmod);
+                    [A_alpha, mu_alpha, sigma_alpha] = propHeterogeneity.Biofitparam(fitParams.param_a,lungDepthAtBraggPeak,baseData.energy, pmod);
+                    [A_beta, mu_beta, sigma_beta] = propHeterogeneity.Biofitparam(fitParams.param_b,lungDepthAtBraggPeak,baseData.energy, pmod);
                 else
                     % % normale Berechnung mit lokalen radiol. Lungentiefen:
-                    [A_alpha, mu_alpha, sigma_alpha] = propHeterogeneity.Biofitparam(fit.param_a,heteroCorrDepths,baseData.energy, pmod);
-                    [A_beta, mu_beta, sigma_beta] = propHeterogeneity.Biofitparam(fit.param_b,heteroCorrDepths,baseData.energy, pmod);
+                    [A_alpha, mu_alpha, sigma_alpha] = propHeterogeneity.Biofitparam(fitParams.param_a,heteroCorrDepths,baseData.energy, pmod);
+                    [A_beta, mu_beta, sigma_beta] = propHeterogeneity.Biofitparam(fitParams.param_b,heteroCorrDepths,baseData.energy, pmod);
                 end              
             end
 
@@ -222,7 +222,7 @@ if propHeterogeneity.bioOpt
                     % sqrtbetaDose = bixel.heteroCorr.conv(i).Z_conv.*sqrt(beta_interp);
                     
                     % basierend auf den radDepths (rayTracing Tiefen):
-                    bixel.heteroCorr.conv(i).Z =bixel.Z(i);
+                    bixel.heteroCorr.conv(i).Z = bixel.Z(i);
                     bixel.heteroCorr.conv(i).fineGridradDepths = min(baseData.depths)-5*sqrt(bixel.heteroCorr.SigmaSq(i)):resolution:max(baseData.depths)+5*sqrt(bixel.heteroCorr.SigmaSq(i));
                     bixel.heteroCorr.conv(i).alphaDose = bixel.Z(i).*baseData.alpha(:,ix);
                     alphaDose_interp = matRad_interp1(baseData.depths, bixel.heteroCorr.conv(i).alphaDose, bixel.heteroCorr.conv(i).fineGridradDepths, 'extrap');

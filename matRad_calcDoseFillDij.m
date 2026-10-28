@@ -22,6 +22,13 @@ if mod(counter,numOfBixelsContainer) == 0 || counter == dij.totalNumOfBixels
                     
                     if pln.bioParam.bioOpt
                         % score alphaxDose and sqrt(beta)xDose matrices
+                        % nur zum Testen von der Convolution - umgehen der
+                        % lateralen Dosisberechnung, da im RBE deutlich
+                        % komplizierter - direkter Vergleich mit bixel -
+                        if isfield(pln, 'testRBE')
+                            dij.bixelDose(:,i) = bixelDose;
+                            dij.bixelDose(:,i).radDepths = currRadDepths(currIx);
+                        end
                         dij.mAlphaDose{ctScen,shiftScen,rangeShiftScen}(:,i)    = dij.mAlphaDose{ctScen,shiftScen,rangeShiftScen}(:,i)    + rayWeight * alphaDoseTmpContainer{1,ctScen,shiftScen,rangeShiftScen};
                         dij.mSqrtBetaDose{ctScen,shiftScen,rangeShiftScen}(:,i) = dij.mSqrtBetaDose{ctScen,shiftScen,rangeShiftScen}(:,i) + rayWeight * betaDoseTmpContainer{1,ctScen,shiftScen,rangeShiftScen};
                     end

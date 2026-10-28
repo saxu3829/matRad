@@ -31,6 +31,7 @@ classdef matRad_HeterogeneityConfig < handle
         modulateLET = false;
         modulateBioDose = false;
         %% Stolzenberg implementation:
+        testRBE = false;
         modulateRBE = true;
 
         % "medium" modulation power
@@ -61,31 +62,34 @@ classdef matRad_HeterogeneityConfig < handle
             out = 1./(sqrt(2*pi.*SqSigma)).*exp(-((x - mu).^2./(2.*SqSigma)));
         end
         %% Stolzenberg RBE modulation implementation:
-        function out = GaussBio(~,x,A,mu,sigma)
+        function out = GaussBio(~,x,A,mu,sigmaSq)
             % Function handle for calculating lateral dose
-            out = A./(sqrt(2*pi.*sigma^2)).*exp(-((x - mu).^2./(2.*sigma^2)));
+            out = A./(sqrt(2*pi.*sigmaSq)).*exp(-((x - mu).^2./(2.*sigmaSq)));
         end
         function [A, mu, sigma] = Biofitparam(~, fitparam, WET,E, Pmod)
                 % Function handle to calculate Gaussian parameters out of
                 % the given beam parameters: water-equivalent depth in lung(WET), 
                 % energy(E), and modulation strength (Pmod)
-                % fitparam  = [a0 a1 a2 a3  b0 b1 b2 b3  c0 c1 c2 c3]
-                % (1x12)
-                % Fitparameters previously obtained using Monte Carlo
+                % fitparam: struct with fit parameters theta_A, theta_sigma,
+                % theta_mu
+                % Fit parameters previously obtained using Monte Carlo
                 % simulations
-                % fitparam = [a0 a1 a2 a3  b0 b1 b2 b3  c0 c1 c2 c3]  (1×12)
+                % fitparam.theta_A = [a0 a1 a2 a3 a4 a5 a6 a7]  (1×7)
                 % WET  =  double vector (?x1)
                 % E  =  double vector (?x1)
                 % Pmod  =  double vector (?x1)
                 
 
-                if length(fitparam) ~= 12
-                    error('fitparam muss genau 12 Elemente haben.');
+                if length(fitparam.theta_A) ~= 7 || length(fitparam.theta_mu) ~= 7 || length(fitparam.theta_sigma) ~= 7 
+                    error('fitparam muss genau 7 Elemente haben.');
                 end
-                % linear combination of above mentioned parameters:
-                A   = fitparam(1) + fitparam(2)*E + fitparam(3)*WET + fitparam(4)*Pmod;
-                mu  = fitparam(5) + fitparam(6)*E + fitparam(7)*WET + fitparam(8)*Pmod;
-                sigma = fitparam(9) + fitparam(10)*E + fitparam(11)*WET + fitparam(12)*Pmod;
+                % interaction model of above mentioned parameters:
+                A = fitparam.theta_A(1) + fitparam.theta_A(2).*E + fitparam.theta_A(3).*WET + fitparam.theta_A(4).*Pmod ...
+                        + fitparam.theta_A(5).*E.*WET + fitparam.theta_A(6).*E.*Pmod + fitparam.theta_A(7).*WET.*Pmod;
+                mu = fitparam.theta_mu(1) + fitparam.theta_mu(2).*E + fitparam.theta_mu(3).*WET + fitparam.theta_mu(4).*Pmod ...
+                        + fitparam.theta_mu(5).*E.*WET + fitparam.theta_mu(6).*E.*Pmod + fitparam.theta_mu(7).*WET.*Pmod;
+                sigma = fitparam.theta_sigma(1) + fitparam.theta_sigma(2).*E + fitparam.theta_sigma(3).*WET + fitparam.theta_sigma(4).*Pmod ...
+                        + fitparam.theta_sigma(5).*E.*WET + fitparam.theta_sigma(6).*E.*Pmod + fitparam.theta_sigma(7).*WET.*Pmod;
         end
         
         %%
